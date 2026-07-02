@@ -1,7 +1,4 @@
 import { execSync } from "node:child_process";
-import { existsSync, mkdtempSync, rmSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { join } from "node:path";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import type { PrismaClient } from "@/generated/prisma/client";
 import type * as CoverageModule from "@/lib/coverage";
@@ -11,35 +8,25 @@ import type * as CoverageModule from "@/lib/coverage";
 // re-offered their own shift once everyone else declined. A pure unit test on
 // nextEligibleStaffId alone would not have caught this -- the bug was in which staff IDs
 // were passed in, not the selection function itself -- so this drives the real Prisma
-// queries against a throwaway SQLite database.
-//
-// `@/lib/prisma` reads DATABASE_URL once, at module-import time. DATABASE_URL is set
-// below before the dynamic import, and Vitest's default per-file module isolation keeps
-// this from colliding with the DB other test files use.
-describe("coverage escalation (integration, real SQLite)", () => {
-  let dbDir: string;
+// queries against a real Postgres database (CI runs one as a service container; locally,
+// set DATABASE_URL to any scratch Postgres instance to run this suite -- it's skipped
+// otherwise rather than failing confusingly with no database configured).
+const hasDatabase = Boolean(process.env.DATABASE_URL);
+
+describe.skipIf(!hasDatabase)("coverage escalation (integration, real Postgres)", () => {
   let prisma: PrismaClient;
   let requestCoverage: typeof CoverageModule.requestCoverage;
   let respondToOffer: typeof CoverageModule.respondToOffer;
 
   beforeAll(async () => {
-    dbDir = mkdtempSync(join(tmpdir(), "covrly-test-"));
-    const dbPath = join(dbDir, "test.db");
-    process.env.DATABASE_URL = `file:${dbPath}`;
-
-    execSync("npx prisma migrate deploy", {
-      cwd: process.cwd(),
-      env: { ...process.env, DATABASE_URL: `file:${dbPath}` },
-      stdio: "pipe",
-    });
+    execSync("npx prisma migrate deploy", { cwd: process.cwd(), stdio: "pipe" });
 
     ({ prisma } = await import("@/lib/prisma"));
     ({ requestCoverage, respondToOffer } = await import("@/lib/coverage"));
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
-    if (existsSync(dbDir)) rmSync(dbDir, { recursive: true, force: true });
+    await prisma?.$disconnect();
   });
 
   it("never re-offers the shift to the staff member who called out", async () => {
@@ -67,13 +54,19 @@ describe("coverage escalation (integration, real SQLite)", () => {
 
     await requestCoverage(org.id, shift.id);
 
-    let offers = await prisma.coverageOffer.findMany({ orderBy: { sequence: "asc" } });
+    let offers = await prisma.coverageOffer.findMany({
+      where: { organizationId: org.id },
+      orderBy: { sequence: "asc" },
+    });
     expect(offers).toHaveLength(1);
     expect(offers[0].staffMemberId).toBe(sam.id);
 
     await respondToOffer(offers[0].id, "decline");
 
-    offers = await prisma.coverageOffer.findMany({ orderBy: { sequence: "asc" } });
+    offers = await prisma.coverageOffer.findMany({
+      where: { organizationId: org.id },
+      orderBy: { sequence: "asc" },
+    });
     expect(offers).toHaveLength(2);
     expect(offers[1].staffMemberId).toBe(jo.id);
     // The critical assertion: Alex (who called out) must never appear as an offer target.

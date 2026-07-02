@@ -1,20 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { getNotificationProvider } from "@/lib/notify";
+import { nextEligibleStaffId } from "@/lib/coverage-priority";
 
 export class CoverageError extends Error {}
-
-/** Pure ordering logic, kept separate from the DB calls so it's trivially unit-testable:
- * given all staff sorted by priority and the set already offered this request, who's next?
- */
-export function nextEligibleStaffId(
-  staffIdsByPriority: string[],
-  alreadyOfferedStaffIds: Set<string>
-): string | null {
-  for (const id of staffIdsByPriority) {
-    if (!alreadyOfferedStaffIds.has(id)) return id;
-  }
-  return null;
-}
+export { nextEligibleStaffId };
 
 async function sendOffer(params: {
   organizationId: string;

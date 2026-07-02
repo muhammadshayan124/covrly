@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { nextEligibleStaffId } from "@/lib/coverage";
+import { nextEligibleStaffId } from "@/lib/coverage-priority";
 
 describe("nextEligibleStaffId", () => {
   it("returns the first staff member not yet offered", () => {

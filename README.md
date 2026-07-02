@@ -18,8 +18,8 @@ the shift is covered. No group chats, no manual follow-up.
 
 ## Stack
 
-Next.js 16 (App Router) · TypeScript · Tailwind CSS · Prisma + SQLite · Auth.js (credentials)
-· Zod · Vitest
+Next.js 16 (App Router) · TypeScript · Tailwind CSS · Prisma + Postgres · Auth.js
+(credentials) · Framer Motion · Zod · Vitest
 
 ## Bring your own SMS/billing credentials
 
@@ -36,9 +36,12 @@ Covrly ships fully functional without either:
 
 ## Quickstart
 
+Needs a Postgres database — a free instance from [Neon](https://neon.tech), Supabase, or
+Vercel Postgres takes about two minutes to create and gives you a connection string.
+
 ```bash
 npm install
-cp .env.example .env.local   # fill in AUTH_SECRET at minimum (npx auth secret)
+cp .env.example .env.local   # fill in DATABASE_URL and AUTH_SECRET (npx auth secret)
 npx prisma migrate deploy
 npm run dev
 ```
@@ -54,10 +57,12 @@ npm run typecheck
 npm test
 ```
 
-The test suite includes an integration test that spins up a throwaway SQLite database and
-drives the real coverage-escalation logic end to end — this caught a real bug during
-development (the escalation query didn't exclude the original assignee, so someone who
-called out could be re-offered their own shift once everyone else declined).
+The test suite includes an integration test that drives the real coverage-escalation logic
+end to end against a real Postgres database — this caught a real bug during development
+(the escalation query didn't exclude the original assignee, so someone who called out
+could be re-offered their own shift once everyone else declined). CI runs a Postgres
+service container for this; locally it's skipped automatically unless `DATABASE_URL` is
+set.
 
 ## Project layout
 
@@ -93,18 +98,10 @@ tests/                          unit tests + the coverage integration test
 
 ## Deployment
 
-**Not yet deployable to Vercel as-is.** SQLite writes to a local file, and Vercel's
-serverless functions have an ephemeral, non-shared filesystem — data wouldn't persist
-between invocations. Before deploying:
-
-1. Switch `prisma/schema.prisma`'s datasource `provider` from `sqlite` to `postgresql`.
-2. Swap `@prisma/adapter-better-sqlite3` for `@prisma/adapter-pg` (or the adapter for
-   whichever Postgres host you pick — Vercel Postgres/Neon/Supabase all work) in
-   `src/lib/prisma.ts`.
-3. Regenerate the client and run `prisma migrate deploy` against the new database.
-
-That's a real, if small, migration — not just an env var swap. `AUTH_SECRET` is required
-either way; Twilio and Stripe variables remain optional, as above.
+Deploy on Vercel. Required environment variables: `DATABASE_URL` (a real Postgres
+instance — Vercel Postgres/Neon/Supabase) and `AUTH_SECRET`. Twilio and Stripe variables
+are optional, as above. Run `npx prisma migrate deploy` against the production database
+once before first use.
 
 ## License
 

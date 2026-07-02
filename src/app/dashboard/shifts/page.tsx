@@ -50,7 +50,7 @@ export default async function ShiftsPage() {
             return (
               <li
                 key={shift.id}
-                className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900"
+                className="rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700"
               >
                 <div className="flex items-center justify-between">
                   <div>
@@ -71,7 +71,7 @@ export default async function ShiftsPage() {
                       <form action={requestCoverageAction.bind(null, shift.id)}>
                         <button
                           type="submit"
-                          className="rounded-lg border border-zinc-300 px-3 py-1 text-sm font-medium hover:bg-zinc-100 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                          className="rounded-full bg-gradient-to-r from-violet-600 to-fuchsia-500 px-3.5 py-1.5 text-sm font-medium text-white shadow-sm transition-transform hover:scale-105"
                         >
                           Request coverage
                         </button>
