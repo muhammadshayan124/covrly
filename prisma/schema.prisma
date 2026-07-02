@@ -1,0 +1,112 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Organization {
+  id                   String   @id @default(cuid())
+  name                 String
+  plan                 String   @default("trial") // trial | pro
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  createdAt            DateTime @default(now())
+
+  users             User[]
+  staff             StaffMember[]
+  shifts            Shift[]
+  coverageRequests  CoverageRequest[]
+  coverageOffers    CoverageOffer[]
+  messages          Message[]
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  passwordHash   String
+  name           String
+  role           String   @default("owner") // owner | manager
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime @default(now())
+}
+
+model StaffMember {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  name           String
+  phone          String
+  // Lower number = contacted earlier in the escalation order.
+  priority       Int      @default(0)
+  portalToken    String   @unique @default(cuid())
+  createdAt      DateTime @default(now())
+
+  assignedShifts Shift[]         @relation("AssignedStaff")
+  offers         CoverageOffer[]
+}
+
+model Shift {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  role            String
+  startsAt        DateTime
+  endsAt          DateTime
+  assignedStaffId String?
+  assignedStaff   StaffMember? @relation("AssignedStaff", fields: [assignedStaffId], references: [id])
+  // scheduled | needs_coverage | covered | uncovered
+  status          String   @default("scheduled")
+  createdAt       DateTime @default(now())
+
+  coverageRequests CoverageRequest[]
+}
+
+model CoverageRequest {
+  id             String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  shiftId        String
+  shift          Shift    @relation(fields: [shiftId], references: [id])
+  // open | filled | exhausted | cancelled
+  status         String   @default("open")
+  createdAt      DateTime @default(now())
+
+  offers CoverageOffer[]
+}
+
+model CoverageOffer {
+  id                String   @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id])
+  coverageRequestId String
+  coverageRequest   CoverageRequest @relation(fields: [coverageRequestId], references: [id])
+  staffMemberId     String
+  staffMember       StaffMember @relation(fields: [staffMemberId], references: [id])
+  // Position in the escalation order for this request (0 = contacted first).
+  sequence          Int
+  // pending | accepted | declined | expired
+  status            String   @default("pending")
+  sentAt            DateTime @default(now())
+  respondedAt       DateTime?
+
+  messages Message[]
+}
+
+model Message {
+  id              String   @id @default(cuid())
+  organizationId  String
+  organization    Organization @relation(fields: [organizationId], references: [id])
+  coverageOfferId String?
+  coverageOffer   CoverageOffer? @relation(fields: [coverageOfferId], references: [id])
+  // outbound | inbound
+  direction       String
+  body            String
+  createdAt       DateTime @default(now())
+}
