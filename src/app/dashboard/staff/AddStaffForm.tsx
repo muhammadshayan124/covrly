@@ -9,13 +9,16 @@ export default function AddStaffForm() {
   const [state, formAction, pending] = useActionState(addStaffAction, initialState);
 
   return (
-    <form action={formAction} className="flex flex-wrap items-end gap-2">
+    <form
+      action={formAction}
+      className="flex flex-wrap items-end gap-2 rounded-2xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900"
+    >
       <div className="flex flex-col">
         <label className="text-xs text-zinc-500">Name</label>
         <input
           name="name"
           required
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none transition-colors focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
         />
       </div>
       <div className="flex flex-col">
@@ -24,7 +27,7 @@ export default function AddStaffForm() {
           name="phone"
           required
           placeholder="+15551234567"
-          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+          className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none transition-colors focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
         />
       </div>
       <div className="flex flex-col">
@@ -34,13 +37,13 @@ export default function AddStaffForm() {
           type="number"
           defaultValue={0}
           min={0}
-          className="w-40 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none focus:border-zinc-500 dark:border-zinc-700 dark:bg-zinc-900 dark:text-white"
+          className="w-40 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-black outline-none transition-colors focus:border-violet-400 dark:border-zinc-700 dark:bg-zinc-950 dark:text-white"
         />
       </div>
       <button
         type="submit"
         disabled={pending}
-        className="rounded-lg bg-black px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50 dark:bg-white dark:text-black dark:hover:bg-zinc-200"
+        className="rounded-lg bg-gradient-to-r from-violet-600 to-fuchsia-500 px-4 py-1.5 text-sm font-medium text-white shadow-sm transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100"
       >
         {pending ? "Adding…" : "Add staff"}
       </button>
